@@ -10,7 +10,9 @@
         <h3 :class="{ completed: todo.completed }">{{ todo.title }}</h3>
         <div>
           <button @click="removeTodo(index)">Delete</button>
-          <button @click="completeTodo(index)">Complete</button>
+          <button @click="completeTodo(index)">
+            {{ todo.completed ? "Undo" : "Complete" }}
+          </button>
         </div>
       </div>
     </div>
