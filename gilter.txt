@@ -1,5 +1,0 @@
- const filteredItems = computed(() => {
-        return items.value.filter(item =>
-          item.name.toLowerCase().includes(filterText.value.toLowerCase())
-        );
-      });
