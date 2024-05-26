@@ -20,8 +20,9 @@
       <div class="task" v-for="(todo, index) in filteredTodos" :key="index">
         <h3 :class="{ completed: todo.completed }">{{ todo.title }}</h3>
         <div>
-          <button @click="deleteTodo(index)">Delete</button>
-          <button>Update</button>
+          <button @click="deleteTodo(index)" style="background-color: red">
+            Delete
+          </button>
           <button @click="completeTodo(index)">
             {{ todo.completed ? "Undo" : "Complete" }}
           </button>
@@ -35,7 +36,6 @@
 import { reactive, toRefs, computed, onMounted, watch } from "vue";
 
 export default {
-  name: "App",
   setup() {
     const state = reactive({
       newTodo: "",
@@ -94,13 +94,13 @@ export default {
       return filtered;
     });
 
-    // Load todos when component is mounted
+    // Load todos when component is mounted (components DOMed)
     onMounted(() => {
       loadTodos();
     });
 
     // Watch for changes in todosList to save to local storage
-    watch(() => state.todosList, saveTodos, { deep: true });
+    watch(() => state.todosList, saveTodos, { deep: true }); //deep tells Vue to watch the nested properties of state.todosLis;
 
     return {
       ...toRefs(state),
