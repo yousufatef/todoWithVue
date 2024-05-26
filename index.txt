@@ -1,14 +1,40 @@
-const add = ()=>{
-    if(state.newTodo.trim()){
-        state.todos.push({title: state.newTodo})
-    state.newTodo = ""
-    }
-}
+        <div v-if="isUpdating" class="update-form">
+          <input type="text" class="input" v-model="updatedTodo" />
+          <button class="add" @click="saveUpdate">Save</button>
+          <button class="add" @click="cancelUpdate">Cancel</button>
+        </div>    
+    
+    
+    
+    
+    const startUpdate = (index) => {
+      state.isUpdating = true;
+      state.updatedTodo = state.todosList[index].title;
+      state.updateIndex = index;
+    };
 
-const remove = (index)=>{
-    state.todos.splice(index, 1)
-}
+    const saveUpdate = () => {
+      if (state.updatedTodo.trim()) {
+        state.todosList[state.updateIndex].title = state.updatedTodo;
+      }
+      state.isUpdating = false;
+      state.updatedTodo = "";
+      state.updateIndex = null;
+    };
 
-const completeTodo = (index)=>{
-    state.todos[index].completed =! state.todos[index].completed
-}
+    const cancelUpdate = () => {
+      state.isUpdating = false;
+      state.updatedTodo = "";
+      state.updateIndex = null;
+    };   
+
+
+
+
+      const state = reactive({
+      newTodo: "",
+      todosList: [],
+      isUpdating: false,
+      updatedTodo: "",
+      updateIndex: null,
+    });

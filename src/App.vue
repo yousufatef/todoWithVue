@@ -1,15 +1,27 @@
 <template>
   <div class="container">
-    <h1 class="title">ToDo List</h1>
-    <div style="display: flex">
-      <input type="text" placeholder="Enter Your Data" v-model="newTodo" />
-      <button @click="addTodo">Add Todo</button>
+    <div class="form">
+      <input type="text" class="input" v-model="newTodo" />
+      <button class="add" @click="createNewTodo">Add Task</button>
     </div>
-    <div>
-      <div class="todo-box" v-for="(todo, index) in todos" :key="index">
+    <div class="tasks">
+      <div class="searchAndFiltering">
+        <div class="search">
+          <input type="text" placeholder="Search..." v-model="searchQuery" />
+        </div>
+        <div class="filtering">
+          <select v-model="filterStatus">
+            <option value="all">All</option>
+            <option value="completed">Completed</option>
+            <option value="inProgress">In Progress</option>
+          </select>
+        </div>
+      </div>
+      <div class="task" v-for="(todo, index) in filteredTodos" :key="index">
         <h3 :class="{ completed: todo.completed }">{{ todo.title }}</h3>
         <div>
-          <button @click="removeTodo(index)">Delete</button>
+          <button @click="deleteTodo(index)">Delete</button>
+          <button>Update</button>
           <button @click="completeTodo(index)">
             {{ todo.completed ? "Undo" : "Complete" }}
           </button>
@@ -20,80 +32,177 @@
 </template>
 
 <script>
-import { reactive, toRefs } from "vue";
+import { reactive, toRefs, computed, onMounted, watch } from "vue";
+
 export default {
   name: "App",
   setup() {
     const state = reactive({
       newTodo: "",
-      todos: [],
+      todosList: [],
+      filterStatus: "all",
+      searchQuery: "",
     });
 
-    const addTodo = () => {
-      if (state.newTodo.trim()) {
-        state.todos.push({ title: state.newTodo });
-        state.newTodo = "";
+    const loadTodos = () => {
+      try {
+        const storedTodos = JSON.parse(localStorage.getItem("todos"));
+        if (Array.isArray(storedTodos)) {
+          state.todosList = storedTodos;
+        }
+      } catch (e) {
+        console.error("Failed to parse todos from local storage:", e);
       }
     };
-    const removeTodo = (index) => {
-      state.todos.splice(index, 1);
+
+    const saveTodos = () => {
+      localStorage.setItem("todos", JSON.stringify(state.todosList));
     };
+
+    const createNewTodo = () => {
+      if (state.newTodo.trim()) {
+        state.todosList.push({ title: state.newTodo, completed: false });
+        saveTodos();
+      }
+      state.newTodo = "";
+    };
+
+    const deleteTodo = (index) => {
+      state.todosList.splice(index, 1);
+      saveTodos();
+    };
+
     const completeTodo = (index) => {
-      state.todos[index].completed = !state.todos[index].completed;
+      state.todosList[index].completed = !state.todosList[index].completed;
+      saveTodos();
     };
+
+    const filteredTodos = computed(() => {
+      let filtered = state.todosList;
+
+      if (state.filterStatus === "completed") {
+        filtered = filtered.filter((todo) => todo.completed);
+      } else if (state.filterStatus === "inProgress") {
+        filtered = filtered.filter((todo) => !todo.completed);
+      }
+      if (state.searchQuery) {
+        filtered = filtered.filter((todo) =>
+          todo.title.toLowerCase().includes(state.searchQuery.toLowerCase())
+        );
+      }
+
+      return filtered;
+    });
+
+    // Load todos when component is mounted
+    onMounted(() => {
+      loadTodos();
+    });
+
+    // Watch for changes in todosList to save to local storage
+    watch(() => state.todosList, saveTodos, { deep: true });
 
     return {
       ...toRefs(state),
-      addTodo,
-      removeTodo,
+      createNewTodo,
+      deleteTodo,
       completeTodo,
+      filteredTodos,
     };
   },
 };
 </script>
 
-<style scoped>
+<style>
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #aaa;
+}
+
 .container {
+  width: 500px;
+  margin: 50px auto;
+}
+.form {
+  background-color: #eee;
+  border-radius: 6px;
+  padding: 20px;
+  margin: 10px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 50px;
-  height: 100vh;
-  width: 100vw;
-  color: rgb(33, 64, 94);
+  text-align: center;
 }
-.title {
-  font-size: 40px;
-  font-weight: 600;
-  margin-bottom: 40px;
-}
-input {
-  width: 250px;
-  height: 20px;
-  border-radius: 5px;
-  padding: 5px;
+.input {
+  padding: 10px;
+  flex: 1;
+  border-radius: 6px;
+  border: 1px solid #ddd;
   outline: none;
-  font-size: 15px;
-  font-weight: bold;
 }
-.todo-box {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  margin-top: 20px;
+.input:focus {
+  outline: none;
 }
-button {
-  background-color: rgb(48, 130, 224);
+.add {
+  background-color: #097c05a6;
   color: white;
-  padding: 7px;
-  width: 100px;
-  margin-left: 5px;
-  border: none;
-  outline: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-left: 10px;
+  padding: 10px;
   cursor: pointer;
-  font-size: 15px;
+}
+.tasks {
+  background-color: #eee;
+  margin: 9px;
+  padding: 20px;
+  border-radius: 6px;
+}
+.searchAndFiltering {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.search input {
+  width: 230px;
+  padding: 10px;
+  flex: 1;
+  border-radius: 6px;
+  outline: none;
+  border: 1px solid #ddd;
+}
+.filtering select {
+  width: 120px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  outline: none;
+}
+.tasks .task {
+  background-color: white;
+  padding: 10px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.3s;
+  border: 1px solid #ccc;
+}
+.tasks .task:not(:last-child) {
+  margin-bottom: 15px;
+}
+.tasks .task:hover {
+  background-color: #f7f7f7;
+}
+.tasks .task button {
+  background-color: rgb(3, 77, 161);
+  padding: 9px;
+  margin-left: 2px;
+  color: white;
+  font-size: 13px;
+  border-radius: 6px;
   font-weight: bold;
+  border: none;
+  cursor: pointer;
 }
 .completed {
   text-decoration: line-through;
